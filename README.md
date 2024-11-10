@@ -1,2 +1,3 @@
-# Web_3D_Implementation
-웹에서 3D 모형 구현하는 파일 올리기!
+# Random!!!
+
+아무거나 다 올리는 레포지토리
