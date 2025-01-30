@@ -1,41 +1,3 @@
-# import os
-# import pystray
-# from pystray import MenuItem as item
-# from PIL import Image
-# import threading
-# import time
-
-# # 이미지 파일 경로를 리스트로 가져오는 함수
-# def get_image_paths(folder):
-#     return [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(('png', 'jpg', 'jpeg', 'gif'))]
-
-# # 아이콘을 변경하는 함수
-# def change_icon(icon, images):
-#     while True:
-#         for image_path in images:
-#             icon.icon = Image.open(image_path)
-#             time.sleep(0.6)  # 0.1: 매우 빠름 / 0.3 : 보통 / 0.6 : 느림
-
-# # 아이콘을 실행하는 함수
-# def on_quit(icon, item):
-#     icon.stop()
-
-# # 이미지가 있는 폴더 경로
-# folder_path = 'imageFiles/hearts/'  # 여기에 폴더 경로를 입력하세요
-# image_paths = get_image_paths(folder_path)
-
-# # 메뉴 설정
-# icon = pystray.Icon("test_icon", Image.open(image_paths[0]), menu=pystray.Menu(item('Quit', on_quit)))
-
-# # 스레드로 이미지 변경 시작
-# thread = threading.Thread(target=change_icon, args=(icon, image_paths))
-# thread.daemon = True
-# thread.start()
-
-# # 아이콘 실행
-# icon.run()
-
-
 import os
 import psutil
 import time
@@ -43,19 +5,6 @@ from pystray import Icon, MenuItem, Menu
 from PIL import Image, ImageDraw
 from threading import Thread
 import queue
-
-# # 이미지 파일 경로를 리스트로 가져오는 함수
-# def get_image_paths(folder):
-#     return [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(('png', 'jpg', 'jpeg', 'gif'))]
-
-# # 아이콘을 변경하는 함수
-# def change_icon(icon, images, speed_queue):
-#     while True:
-#         for image_path in images:
-#             icon.icon = Image.open(image_path)
-#             # speed_queue에서 속도 정보를 받아옴
-#             speed = speed_queue.get()  
-#             time.sleep(speed)  # CPU 사용량에 따른 동적 속도 변경
 
 # 이미지를 생성하는 함수
 def create_image(color):
@@ -98,19 +47,13 @@ def monitor_cpu_usage(speed_queue):
 
 # 트레이 아이콘 실행 함수
 def main():
-    # # 이미지가 있는 폴더 경로
-    # folder_path = 'imageFiles/hearts/'  # 여기에 폴더 경로를 입력하세요
-    # image_paths = get_image_paths(folder_path)
-
     # 속도 정보를 저장할 큐 생성
     speed_queue = queue.Queue()
 
     # 메뉴 설정
-    # icon = Icon("test_icon", Image.open(image_paths[0]), menu=Menu(MenuItem('Exit', on_exit)))
     icon = Icon("test_icon", create_image('red'), menu=Menu(MenuItem('Quit', on_exit)))
 
     # 스레드로 이미지 변경 시작
-    # thread = Thread(target=change_icon, args=(icon, image_paths, speed_queue))
     thread = Thread(target=change_icon, args=(icon, speed_queue))
     thread.daemon = True
     thread.start()
