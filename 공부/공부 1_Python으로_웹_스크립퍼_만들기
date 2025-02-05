@@ -4,53 +4,60 @@ from bs4 import BeautifulSoup
 import re
 import csv
 
-class webScrap:
+class webScrap:  # web 스크랩을 할 수 있는 클래스
     def __init__(self, keyWord):
-        self.keyword = keyWord
-        self.all_jobs = []
+        self.keyword = keyWord  # 클래스 생성을 하면 받은 인자값을 keyword라는 변수에 저장
+        self.all_jobs = []  # 스크랩한 직업 정보를 담을all_jobs 리스트 생성
 
 
     def keywordJob(self):  # 전달받은 keyword를 사용해서 페이지 내부의 내용을 저장하기
 
-        print(f"{self.keyword} page scraping start!")
+        print(f"{self.keyword} page scraping start!")  # 현재 keyword 값을 스크랩 하기 시작한다는 문구 출력
 
-        # 동적으로 읽어야 읽히는 상황
+
+        # 동적으로 읽어야 읽히는 상황이라 sync_playwright 사용
+
         p = sync_playwright().start()  # playwright 시작!
 
         browser = p.chromium.launch() # 브라우저 : 크롬
 
         page = browser.new_page() # 브라우저에 새로운 탭 생성
 
-        page.goto(f"https://remoteok.com/remote-{self.keyword}-jobs") # keywords에 있는 직업을 검색!
+        page.goto(f"https://remoteok.com/remote-{self.keyword}-jobs") # keywords에 있는 직업을 검색! / 이 부분도 따로 수정하면 원하는 url에서 스크랩 가능!
 
         time.sleep(3) # 화면 로딩 대기
 
         # 스크롤을 더이상 내릴 수 없을 때까지 내리는 코드도 짜봤는데, python이나 golang이 경우 1년 이상 지난 게시물까지 전부 로딩되는걸 확인하고 아래 코드로 최종 결정.
         for i in range(4): # 스크롤 4번만 내리면 내 컴퓨터 기준 120개 정도의 게시물이 로딩됨.
-            page.keyboard.down('End')
-            time.sleep(5)
+            page.keyboard.down('End')  # 우리가 키보드를 누르는 것과 같은 기능을 수행
+            time.sleep(5)  # 화면을 내린후 5초 정도 대기
 
         content = page.content()  # 페이지 내용 가져오기
-        browser.close()
-        p.stop()
+        browser.close()  # 브라우저 닫기
+        p.stop()  # sync_playwright도 닫기
         
-        self.content = content
-        print(f"{self.keyword} page scraping finish!")
+        self.content = content  # 읽은 content를 class의 content로 변환
+        print(f"{self.keyword} page scraping finish!")  # keyword 페이지의 내용을 다 읽었음을 알림!
 
 
     def beautiSoup(self):  # beautifulSoup를 사용해서 원하는 데이터를 뽑아내기
 
-        print(f"{self.keyword} job list making...") # 현재 스크랩 중인 잡을 알려줌
+        print(f"{self.keyword} job list making...") # 현재 스크랩한 내용에서 원하는 데이터를 뽑아내는 중임을 알려줌
 
-        soup = BeautifulSoup(self.content, "html.parser")
+        soup = BeautifulSoup(self.content, "html.parser")  # BeautifulSoup를 사용하며, html임을 서술해야함
 
+
+        # 원하는 데이터들이 있는 위치를 먼저 찾음
         jobsboard = soup.find('table', id='jobsboard'
                         ).find_all('td', class_='company position company_and_position')[1:]
 
-        for job in jobsboard:
+
+        # jobsboard의 데이터가 더 이상 없을 때 까지 반복해서 데이터를 스크랩함
+        '''
+        for job in jobsboard:  
             link = f"https://remoteok.com{job.find('a')['href']}"  # 각각 직업에 걸려져있는 링크완성하기!
             title = job.find("h2", itemprop="title").text.strip()  # 제목
-            company = job.find("h3", itemprop="name").text.strip()  # 회사
+            company = job.find("h3", itemprop="name").text.strip()  # 회사 이름
 
             location_check = job.find('div', class_='location') # 이렇게만 가져오면 location_tooltip, location_tooltip-set 까지 같이 가져오짐.
             if location_check is None: # 내용이 없어서 None 으로 불러와진 경우 편집
@@ -62,14 +69,17 @@ class webScrap:
             else:
                 location=location_check.text.strip()
 
-            pay = job.find("div", class_="location tooltip", title=re.compile("No salary data published"))
+            pay = job.find("div", class_="location tooltip", title=re.compile("No salary data published"))  # 월급(?) 가져오기
+                                                            # title=re.compile("No salary data published")를 사용해서 title에 No salary data published를 포함하고 있는 값을 찾아 pay에 저장
 
-            if pay:
+            if pay:  # 필요없는 <div> 태그 등을 제외하기 위해서임
                 pay = pay.get_text(strip=True)  # 텍스트만 가져오고 양쪽 공백을 제거
                 # print(pay)  # 💰 $60k - $130k*
             else:
                 pay = "None"  # 값이 없을 경우!
 
+
+            # all_jobs에 저장할 딕셔너리 생성하기
             job = {
                 "title" : title,
                 "company" : company,
@@ -79,9 +89,48 @@ class webScrap:
             }
 
             self.all_jobs.append(job)  # 생성된 job 딕셔너리를 all_jobs 리스트에 추가!
+        '''
+        for job in jobsboard:
+            # 링크 가져오기
+            link_tag = job.find('a')
+            link = f"https://remoteok.com{link_tag['href']}" if link_tag else "링크 없음"
 
+            # 제목 가져오기
+            title_tag = job.find("h2", itemprop="title")
+            title = title_tag.text.strip() if title_tag else "제목 없음"
 
-        file = open(f"{self.keyword}.csv", "w", encoding="utf-8")
+            # 회사 이름 가져오기
+            company_tag = job.find("h3", itemprop="name")
+            company = company_tag.text.strip() if company_tag else "회사 정보 없음"
+
+            # 위치 가져오기
+            location_check = job.find('div', class_='location')
+            if location_check is None:
+                location = '정보 없음'
+            elif 'tooltip' in location_check.get('class', []):
+                location = '정보 없음'
+            elif 'tooltip-set' in location_check.get('class', []):
+                location = '정보 없음'
+            else:
+                location = location_check.text.strip()
+
+            # 급여 정보 가져오기
+            pay_tag = job.find("div", class_="location tooltip", title=re.compile("No salary data published"))
+            pay = pay_tag.get_text(strip=True) if pay_tag else "급여 정보 없음"
+
+            # 결과를 딕셔너리로 저장
+            job_data = {
+                "title": title,
+                "company": company,
+                "location": location,
+                "pay": pay,
+                "link": link
+            }
+
+            self.all_jobs.append(job_data)  # 생성된 job 딕셔너리를 all_jobs 리스트에 추가
+        
+        # keyword 이름으로 csv 파일을 생성 / 모드 : 쓰기(write) / encoding 형식 : utf-8 (한글 허용을 위함) / newline='' : 빈 줄 삽입 방지!
+        file = open(f"{self.keyword}.csv", "w", encoding="utf-8", newline='')
         writter = csv.writer(file)
 
         writter.writerow([
