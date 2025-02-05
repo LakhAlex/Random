@@ -8,15 +8,10 @@ def forest():
     bg = ImageTk.PhotoImage(img)
     label.config(image=bg)
 
-    # sound = pygame.mixer.stop()
-    # sound = pygame.mixer.Sound('soundFiles/숲_새소리.mp3')
-    # sound.play(-1)
-
     pygame.mixer_music.stop()
     pygame.mixer_music.load('soundFiles/숲_새소리.mp3')
     pygame.mixer_music.play(-1)
 
-    # print("배경화면이 숲으로 변했습니다.")
 
 
 def sea():
@@ -25,19 +20,60 @@ def sea():
     bg = ImageTk.PhotoImage(img)
     label.config(image=bg)
 
-    # sound = pygame.mixer.stop()
-    # sound = pygame.mixer.Sound('soundFiles/파도소리.mp3')
-    # sound.play(-1)
-
     pygame.mixer_music.stop()
     pygame.mixer_music.load('soundFiles/파도소리.mp3')
     pygame.mixer_music.play(-1)
 
     # print("배경화면이 바다로 변했습니다.")
 
+saveVolume = 0.5  # 기본 볼륨 (50%)
+isMuted = False  # 음소거 상태 여부
+
 def soundSet(value):
-    volume = float(value) / 100
-    pygame.mixer_music.set_volume(volume)
+    global saveVolume, isMuted, btnImg
+    volume = float(value) / 100  # 볼륨 값 계산
+
+    # 🔹 스케일 값이 0이면 자동으로 음소거 처리
+    if volume == 0:  # 볼륨이 0이면 
+        isMuted = True  # 음소거 상태로 변경
+        btnSpiker = Image.open('imageFiles/off.png')
+    else:  # 볼륨이 1이상이면
+        isMuted = False  # 음소거 해제
+        btnSpiker = Image.open('imageFiles/on.png')
+
+    # 음소거 버튼 상태 변화
+    btnSpiker = btnSpiker.resize((17, 17))  # 버튼 이미지 크기 설정
+    btnImg = ImageTk.PhotoImage(btnSpiker)
+    mute.config(image=btnImg)  # 버튼 이미지 변경
+
+    # 음소거 상태가 아니면 볼륨 조절
+    if not isMuted:
+        pygame.mixer.music.set_volume(volume)
+    
+
+# 음소서 on/off 함수
+def play_And_mute():
+    global saveVolume, isMuted, btnImg
+    
+    if isMuted:  # 음소거가 되어 있다면?
+        pygame.mixer_music.set_volume(saveVolume)
+        soundValue.set(saveVolume * 100)  # saveVolume값은 0.5와 같은 소수점! 하지만 보여야 하는 것은 50! -> 100을 곱해준다.
+        isMuted = False
+        btnSpiker = Image.open('imageFiles/on.png')
+
+    else:  # 음소거 하고 싶다면?
+        saveVolume = pygame.mixer_music.get_volume()  # 현재 음략 값을 saveVolume에 저장
+        pygame.mixer_music.set_volume(0.0)
+        soundValue.set(0)
+        isMuted = True
+
+        btnSpiker = Image.open('imageFiles/off.png')
+    
+    btnSpiker = btnSpiker.resize((17, 17))
+    btnImg = ImageTk.PhotoImage(btnSpiker)
+    mute.config(image=btnImg)  # 버튼 이미지 변경
+
+
 
 pygame.init()
 pygame.mixer.init()
@@ -89,9 +125,15 @@ btn2.pack(side="right", padx=3)
 # 사운드 조절 스케일
 soundValue = Scale(btn_group, from_ = 0, to = 100, orient=HORIZONTAL, command=soundSet)
 soundValue.set(50)
-soundValue.pack()
+soundValue.pack(side="right", padx=3)
+
+btnSpiker = Image.open('imageFiles/on.png')
+btnSpiker = btnSpiker.resize((17, 17))
+btnImg = ImageTk.PhotoImage(btnSpiker)
+mute = Button(btn_group, image=btnImg, command=play_And_mute)
+mute.pack(side="left")
 
 # Tkinter 화면 계속 띄워둘 수 있게 하기
 win.mainloop()
 
-# pyintaller -w -F asmr용프로그램.py 로 생성하기
+# pyinstaller -w -F asmr용프로그램.py 로 생성하기
